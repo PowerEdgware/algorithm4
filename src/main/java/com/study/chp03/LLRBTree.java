@@ -98,6 +98,23 @@ public class LLRBTree<Key extends Comparable<Key>, Value> {
 		return null;
 	}
 
+	public Key getMin() {
+		Node x = min();
+		if (x != null)
+			return x.key;
+		return null;
+	}
+
+	Node min() {
+		Node x = root;
+		while (x != null) {
+			if (x.left == null)
+				return x;
+			x = x.left;
+		}
+		return null;
+	}
+
 	// TODO 删除最小值
 	// 沿着删除路径向下变换，使得当前节点不是2节点。
 	public void deleteMin() {
@@ -110,16 +127,7 @@ public class LLRBTree<Key extends Comparable<Key>, Value> {
 			return null;
 		// 判断节点是否是2-节点，是2-节点必须从右边兄弟节点借一个或者合并为把右边兄弟合并成4-节点
 		if (!isRed(x.left) && !isRed(x.left.left)) {
-			// 合并为4-节点
-			flipColor(x);
-
-			if (isRed(x.right.left)) {// 右兄弟节点不是2-节点，则借一个节点过来。右边兄弟节点没有红色右链接，所以只判断左链接是否是红色即可
-				x.right = rotateRight(x.right);// 此时x.right变红
-				// 以x左旋
-				x = rotateLeft(x);
-				// 分裂4-节点
-				flipColor(x);
-			}
+			x = moveRedLeft(x);
 		}
 		// 继续向下进行变换
 		x.left = deleteMin(x.left);
@@ -136,16 +144,30 @@ public class LLRBTree<Key extends Comparable<Key>, Value> {
 		return x;
 	}
 
+	private Node moveRedLeft(Node x) {
+		// 合并为4-节点
+		flipColor(x);
+
+		if (isRed(x.right.left)) {// 右兄弟节点不是2-节点，则借一个节点过来。右边兄弟节点没有红色右链接，所以只判断左链接是否是红色即可
+			x.right = rotateRight(x.right);// 此时x.right变红
+			// 以x左旋
+			x = rotateLeft(x);
+			// 分裂4-节点
+			flipColor(x);
+		}
+		return x;
+	}
+
 	// TODO 删除最大值
 	public void deleteMax() {
 		root = deleteMax(root);
 		root.color = BLACK;
 	}
 
-	//沿着右边向下，确保当前节点不是二节点且最终右链接是红色，这样删除后才不会破坏黑色平衡
-	//1.当前节点不是二节点，说明有红色左连接，则需要把红色左连接右旋变成红色右链接。有了红色右边链接，则继续递归删除红色右边链接。
-	//2.当前节点是2节点，
-	//3.到了这一步，
+	// 沿着右边向下，确保当前节点不是二节点且最终右链接是红色，这样删除后才不会破坏黑色平衡
+	// 1.当前节点不是二节点，说明有红色左连接，则需要把红色左连接右旋变成红色右链接。有了红色右边链接，则继续递归删除红色右边链接。
+	// 2.当前节点是2节点，
+	// 3.到了这一步，
 	private LLRBTree<Key, Value>.Node deleteMax(LLRBTree<Key, Value>.Node x) {
 		if (isRed(x.left) && !isRed(x.right))// 右边变红
 			x = rotateRight(x);
@@ -154,15 +176,24 @@ public class LLRBTree<Key extends Comparable<Key>, Value> {
 
 		// 右边不为空，此时需要判断右边是否是二节点
 		if (!isRed(x.right) && !isRed(x.right.left)) {// x的右边节点是二节点
-			flipColor(x);// 合并四节点
-
-			if (isRed(x.left.left)) {
-				x = rotateRight(x);
-				flipColor(x);// 继续向下变换
-			}
+			x = moveRedRight(x);
 		}
 		x.right = deleteMax(x.right);
 
+		return fixUp(x);
+	}
+
+	private Node moveRedRight(Node x) {
+		flipColor(x);// 合并四节点
+
+		if (isRed(x.left.left)) {
+			x = rotateRight(x);
+			flipColor(x);// 继续向下变换
+		}
+		return x;
+	}
+
+	private Node fixUp(Node x) {
 		// 向上变换，调整红色右边链接，左左红色链接，和4-节点
 		if (isRed(x.right))
 			x = rotateLeft(x);
@@ -171,6 +202,41 @@ public class LLRBTree<Key extends Comparable<Key>, Value> {
 		if (isRed(x.right) && isRed(x.left))
 			flipColor(x);
 		return x;
+	}
+
+	public void delete(Key key) {
+		if (size() == 0)
+			return;
+		root = delete(root, key);
+		root.color = BLACK;
+	}
+
+	private LLRBTree<Key, Value>.Node delete(Node x, Key key) {
+		int cmp = key.compareTo(x.key);
+		if (cmp < 0) {// left
+			// 左边，沿着路上向下进行变换
+			if (!isRed(x.left) && !isRed(x.left.left)) {
+				x = moveRedLeft(x);
+			}
+			x.left = delete(x.left, key);
+		} else {
+			// 相等或者向右走
+			if (isRed(x.left))// 出现红色右链接
+				x = rotateRight(x);
+			if (cmp == 0 && x.right == null)
+				return null;
+			if (!isRed(x.right) && !isRed(x.left.left))
+				x = moveRedRight(x);
+
+			if (cmp == 0) {
+				Node min = min();
+				x.key = min.key;
+				x.val = min.val;
+				x.right = deleteMin(x.right);
+			} else
+				x.right = delete(x.right, key);
+		}
+		return fixUp(x);
 	}
 
 	public void displayTree() {
