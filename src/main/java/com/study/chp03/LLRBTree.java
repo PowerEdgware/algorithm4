@@ -212,8 +212,7 @@ public class LLRBTree<Key extends Comparable<Key>, Value> {
 	}
 
 	private LLRBTree<Key, Value>.Node delete(Node x, Key key) {
-		int cmp = key.compareTo(x.key);
-		if (cmp < 0) {// left
+		if (key.compareTo(x.key) < 0) {// left
 			// 左边，沿着路上向下进行变换
 			if (!isRed(x.left) && !isRed(x.left.left)) {
 				x = moveRedLeft(x);
@@ -223,12 +222,12 @@ public class LLRBTree<Key extends Comparable<Key>, Value> {
 			// 相等或者向右走
 			if (isRed(x.left))// 出现红色右链接
 				x = rotateRight(x);
-			if (cmp == 0 && x.right == null)
+			if (key.compareTo(x.key) == 0 && x.right == null)
 				return null;
 			if (!isRed(x.right) && !isRed(x.left.left))
 				x = moveRedRight(x);
 
-			if (cmp == 0) {
+			if (key.compareTo(x.key) == 0) {
 				Node min = min();
 				x.key = min.key;
 				x.val = min.val;
