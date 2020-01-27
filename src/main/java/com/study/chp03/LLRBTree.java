@@ -3,6 +3,7 @@ package com.study.chp03;
 import java.util.Stack;
 
 //基于2-3-4树的左倾和红黑树。3-节点左斜，且不允许有单独存在右链接。保持black-link完美平衡
+//TreeMap
 public class LLRBTree<Key extends Comparable<Key>, Value> {
 	class Node {
 		Key key;
@@ -28,6 +29,10 @@ public class LLRBTree<Key extends Comparable<Key>, Value> {
 		if (x != null)
 			return x.val;
 		return null;
+	}
+	
+	public boolean containsKey(Key key) {
+		return get(key)!=null;
 	}
 
 	Node get(Node x, Key key) {
@@ -205,10 +210,13 @@ public class LLRBTree<Key extends Comparable<Key>, Value> {
 	}
 
 	public void delete(Key key) {
-		if (size() == 0)
-			return;
+		assert key != null;
+
+		Value val=get(key);
+		if(val==null)return;
 		root = delete(root, key);
-		root.color = BLACK;
+		if (root != null)
+			root.color = BLACK;
 	}
 
 	private LLRBTree<Key, Value>.Node delete(Node x, Key key) {
@@ -224,7 +232,7 @@ public class LLRBTree<Key extends Comparable<Key>, Value> {
 				x = rotateRight(x);
 			if (key.compareTo(x.key) == 0 && x.right == null)
 				return null;
-			if (!isRed(x.right) && !isRed(x.left.left))
+			if (!isRed(x.right) && !isRed(x.right.left))
 				x = moveRedRight(x);
 
 			if (key.compareTo(x.key) == 0) {
